@@ -59,6 +59,8 @@ namespace AslMonitor.Forms
         }
         private async Task RefreshAsync()
         {
+            txtRemarks.Text = "";
+
             string baseUri = "https://localhost:7110/";
             using HttpClient http = new HttpClient();
             http.BaseAddress = new Uri(baseUri);
@@ -186,12 +188,14 @@ namespace AslMonitor.Forms
             if (state.CurrentState?.ToUpper() != "WORKING")
             {
                 aTimer.Stop();
-                panel1.Hide();
+                materialCard2.Hide();
+                btnStart.Visible = true;
                 cmbCurrentStatus.Enabled = false;
             }
             else
             {
-                panel1.Show();
+                materialCard2.Show();
+                btnStart.Visible = false;
                 cmbCurrentStatus.Enabled = true;
                 aTimer.Start();
             }
@@ -209,10 +213,11 @@ namespace AslMonitor.Forms
         {
             if (cmbCurrentStatus.SelectedItem?.ToString() != "Working")
             {
+                txtRemarks.Text = "Started working";
                 cmbCurrentStatus.SelectedItem = "Working";
                 await SubmitData();
-                panel1.Show();
-                panel1.Enabled = true;
+                materialCard2.Show();
+                materialCard2.Enabled = true;
             }
         }
     }
