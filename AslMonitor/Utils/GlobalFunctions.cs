@@ -11,11 +11,24 @@ using System.Threading.Tasks;
 
 namespace AslMonitor.Utils
 {
+    ///<summary>
+    ///A collection of common functions and properties.
+    ///</summary
     public class GlobalFunctions
     {
 
-
+        ///<summary>
+        ///Base url of the server app.
+        ///</summary>
         public static string BaseUri = "https://localhost:7110/";
+        ///<summary>
+        ///Screenshots will be saved on this directory.
+        ///</summary
+        public static string LocalImagePath = @"D:\SS\";
+
+        ///<summary>
+        ///Checks Internet connection on both client and server by hitting the server api.
+        ///</summary>
         public static bool CheckForInternetConnection(int timeoutMs = 10000)
         {
             try
@@ -34,12 +47,16 @@ namespace AslMonitor.Utils
             }
         }
 
+
+        ///<summary>
+        ///Extract User data from the jwt token.
+        ///</summary>
         public static CurrentUser GetCurrentUser(string token)
         {
             JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
             JwtSecurityToken tokenS = handler.ReadToken(token) as JwtSecurityToken;
             string userData = tokenS.Claims.First(claim => claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/userdata").Value;
-            UserInfo user = JsonConvert.DeserializeObject<UserInfo>(userData!);
+            UserInfo? user = JsonConvert.DeserializeObject<UserInfo>(userData!);
             CurrentUser currentUser = new CurrentUser()
             {
                 LoginID = user!.LoginID,

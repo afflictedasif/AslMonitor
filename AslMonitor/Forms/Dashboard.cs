@@ -39,12 +39,17 @@ namespace AslMonitor.Forms
         private CurrentUser? user { get; set; }
         private async void Dashboard_Load(object sender, EventArgs e)
         {
-            //string t = this.token;
+
+            //Loads the token from local database.
             using DatabaseContext _db = new DatabaseContext();
             LoginToken? loginToken = await _db.LoginTokens.FirstOrDefaultAsync();
-            this.token = loginToken.Token;
+            this.token = loginToken?.Token;
 
-
+            //Extract informations about the current user from the token
+            if (token == null)
+            {
+                return;
+            }
             user = GlobalFunctions.GetCurrentUser(token);
             lblUserName.Text = user.UserName;
 
@@ -57,6 +62,10 @@ namespace AslMonitor.Forms
             //MaterialForm formDailog = new Form1();
             //formDailog.ShowDialog();
         }
+
+        ///<summary>
+        ///Loads last user state from the server.
+        ///</summary>
         private async Task RefreshAsync()
         {
             txtRemarks.Text = "";
@@ -85,12 +94,18 @@ namespace AslMonitor.Forms
             e.Cancel = true;
         }
 
+        ///<summary>
+        ///Hits after form is shown
+        ///</summary>
         private void Dashboard_Shown(object sender, EventArgs e)
         {
             SetTimer();
         }
 
 
+        ///<summary>
+        ///Capture the screenshot and save it in the drive.
+        ///</summary>
         private void CaptureMyScreen()
         {
             try
@@ -111,7 +126,7 @@ namespace AslMonitor.Forms
                 captureGraphics.CopyFromScreen(0, 0, 0, 0, captureRectangle.Size);
 
                 Guid guid = Guid.NewGuid();
-                string FolderPath = @"D:\SS\";
+                string FolderPath = GlobalFunctions.LocalImagePath;  // @"D:\SS\";
                 string FileName = guid.ToString() + ".jpg";
                 string path = FolderPath + FileName;
                 //Saving the Image File (I am here Saving it in My drive).
@@ -121,12 +136,17 @@ namespace AslMonitor.Forms
 
                 //string token2 = @"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3VzZXJkYXRhIjoie1wiVXNlckluZm9JRFwiOjMsXCJVc2VySURcIjoxMDEwMixcIkJyYW5jaENEXCI6bnVsbCxcIlVzZXJOYW1lXCI6XCJLYXJpbSBVZGRpblwiLFwiVXNlclR5cGVcIjpcIlVTRVJcIixcIkxvZ2luSURcIjpcImthcmltQGdtYWlsLmNvbVwiLFwiTHR1ZGVcIjpcIlwiLFwiVXNlclBDXCI6XCJERVNLVE9QLTJURTIxUEZcIixcIklQQWRkcmVzc1wiOlwiZmU4MDo6YjRlYTozZmMxOmE3YTA6ZmZkZCUxOVwifSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiNjNmODQ3NzMtZjM5Ny00MGRhLWI5ODUtMDFjNTIwMjhkOWI3IiwiZXhwIjoxNjQ3NDM0ODUxLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjcxMTAiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjcxMTAifQ.r2bdBkobquuZOdLUpB6dEZf07clrmm-M02AQJwXuxMo";
 
-                WebClient client = new WebClient();
-                client.Headers.Add("Authorization", $"Bearer {token}");
-                //client.UploadFile("https://localhost:7110/WeatherForecast/", path);
-                client.UploadFile("https://localhost:7110/api/Files/", path);
-                //client.UploadFile()
 
+                //client.UploadFile()
+                if(GlobalFunctions.CheckForInternetConnection())
+                {
+                    WebClient client = new WebClient();
+                    client.Headers.Add("Authorization", $"Bearer {token}");
+                    //client.UploadFile("https://localhost:7110/WeatherForecast/", path);
+                    var response = client.UploadFile("https://localhost:7110/api/Files/", path);
+
+                    File.Delete(path);
+                }
                 captureBitmap.Dispose();
 
                 //MessageBox.Show("Screen Captured");
@@ -141,9 +161,14 @@ namespace AslMonitor.Forms
         private static System.Timers.Timer aTimer;
         private readonly DatabaseContext _db;
 
+
+
+        ///<summary>
+        ///Start the timer on a fixed interval.
+        ///</summary>
         private void SetTimer()
         {
-            // Create a timer with a two second interval.
+            // Create a timer with a 30 second interval.
             aTimer = new System.Timers.Timer(TimeSpan.FromSeconds(30).TotalMilliseconds);
             // Hook up the Elapsed event for the timer. 
             aTimer.Elapsed += OnTimedEvent;
@@ -151,11 +176,12 @@ namespace AslMonitor.Forms
             aTimer.Enabled = true;
         }
 
+        ///<summary>
+        ///Calls the method frequently after given time interval.
+        ///</summary>
         private void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
             CaptureMyScreen();
-            //Console.WriteLine("The Elapsed event was raised at {0:HH:mm:ss.fff}",
-            //                  e.SignalTime);
         }
 
         private async void btnSubmit_Click(object sender, EventArgs e)
@@ -164,6 +190,10 @@ namespace AslMonitor.Forms
             await SubmitData();
         }
 
+
+        ///<summary>
+        ///Submit Updated state to the server.
+        ///</summary>
         private async Task SubmitData()
         {
             if (cmbCurrentStatus.SelectedItem is null) return;
@@ -174,7 +204,8 @@ namespace AslMonitor.Forms
             state.UserID = user.UserID;
 
             string st = JsonConvert.SerializeObject(state);
-            string baseUri = "https://localhost:7110/";
+            //string baseUri = "https://localhost:7110/";
+            string baseUri = GlobalFunctions.BaseUri;
             using HttpClient http = new HttpClient();
             http.BaseAddress = new Uri(baseUri);
             http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
