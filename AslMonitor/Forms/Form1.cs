@@ -17,6 +17,8 @@ namespace AslMonitor
 {
     public partial class Form1 : MaterialForm
     {
+        private readonly Dashboard _dashboard;
+        private readonly SignUp _signUp;
 
         //private const int CP_NOCLOSE_BUTTON = 0x200;
         //protected override CreateParams CreateParams
@@ -29,8 +31,11 @@ namespace AslMonitor
         //    }
         //}
 
-        public Form1()
+        public Form1(Dashboard dashboard, SignUp signUp)
         {
+            _dashboard = dashboard;
+            _signUp = signUp;
+
             InitializeComponent();
         }
 
@@ -38,17 +43,11 @@ namespace AslMonitor
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            //Thread background = new Thread(SetTimer);
-            //background.IsBackground = true;
-            //background.Start();
-            bool connected = GlobalFunctions.CheckForInternetConnection();
+
+            bool connected = _dashboard.Connected;
             if (connected) MaterialMessageBox.Show("Connected");
             else MaterialMessageBox.Show("Not Connected");
 
-            //using var _db = new DatabaseContext();
-            //LoginToken loginToken = new LoginToken() { Token = "abc124" };
-            //_db.LoginTokens.Add(loginToken);
-            //int rowsAffected = _db.SaveChanges();
         }
 
         private void Form1_Resize(object sender, EventArgs e)
@@ -91,10 +90,10 @@ namespace AslMonitor
             LoginToken? loginToken = await _db.LoginTokens.FirstOrDefaultAsync();
             if (loginToken is not null)
             {
-                Dashboard formD = new Dashboard();
-                formD.Show();
-                formD.token = loginToken.Token;
-                formD.Location = this.Location;
+                //Dashboard _dashboard = new Dashboard();
+                _dashboard.Show();
+                _dashboard.token = loginToken.Token;
+                _dashboard.Location = this.Location;
 
                 Close();
                 notifyIcon1.Visible = false;
@@ -103,9 +102,9 @@ namespace AslMonitor
 
         private void btnSignUp_Click(object sender, EventArgs e)
         {
-            SignUp formD = new SignUp();
-            formD.Show();
-            formD.Location = this.Location;
+            //SignUp _signUp = new SignUp();
+            _signUp.Show();
+            _signUp.Location = this.Location;
 
             Close();
             notifyIcon1.Visible = false;
@@ -126,8 +125,6 @@ namespace AslMonitor
             string baseUri = "https://localhost:7110/";
             using HttpClient http = new HttpClient();
             http.BaseAddress = new Uri(baseUri);
-            //http.DefaultRequestHeaders.Accept.Clear();
-            //http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             using var response = await http.PostAsJsonAsync("api/auth/Login", loginModel);
             if (!response.IsSuccessStatusCode)
             {
@@ -146,10 +143,10 @@ namespace AslMonitor
 
 
 
-            Dashboard formD = new Dashboard();
-            //formD.token = token!.token;
-            formD.Show();
-            formD.Location = this.Location;
+            //Dashboard _dashboard = new Dashboard();
+            ////_dashboard.token = token!.token;
+            _dashboard.Show();
+            _dashboard.Location = this.Location;
 
             Close();
             notifyIcon1.Visible = false;

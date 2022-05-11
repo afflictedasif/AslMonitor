@@ -16,10 +16,12 @@ namespace AslMonitor.Forms
 {
     public partial class SignUp : MaterialForm
     {
-        public SignUp()
+        private readonly Dashboard _dashboard;
+
+        public SignUp(Dashboard dashboard)
         {
             InitializeComponent();
-            
+            _dashboard = dashboard;
         }
 
         private void SignUp_Load(object sender, EventArgs e)
@@ -77,9 +79,9 @@ namespace AslMonitor.Forms
             var inserted =await _db.LoginTokens.AddAsync(loginToken);
             await _db.SaveChangesAsync();
 
-            Dashboard formD = new Dashboard();
-            formD.Show();
-            formD.Location = this.Location;
+            //Dashboard _dashboard = new Dashboard();
+            _dashboard.Show();
+            _dashboard.Location = this.Location;
             //formD.token = token.token;
             Close();
             //notifyIcon1.Visible = false;

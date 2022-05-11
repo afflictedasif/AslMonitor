@@ -1,5 +1,9 @@
 using AslMonitor.DAL;
 using AslMonitor.DAL.Models;
+using AslMonitor.DAL.Repositories;
+using AslMonitor.Forms;
+using AslMonitor.Services;
+using AslMonitor.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -38,10 +42,23 @@ namespace AslMonitor
         private static void ConfigureServices(ServiceCollection services)
         {
             services.AddScoped<Form1>();
+            services.AddScoped<Dashboard>();
+            services.AddScoped<SignUp>();
             services.AddDbContext<DatabaseContext>();
 
-            //.AddScoped<IBusinessLayer, CBusinessLayer>()
-            //.AddSingleton<IDataAccessLayer, CDataAccessLayer>();
+            services.AddScoped(typeof(IGenericRepo<>), typeof(GenericRepo<>));
+
+            services.AddScoped<IJsonDBService, JsonDBService>();
+            //services.AddScoped<IFileUploader, FileUploader>();
+            //services.AddScoped<IScreenShotService, ScreenShotService>();
+            services.AddScoped<ILogService, LogService>();
+            services.AddScoped<IUserRepo, UserRepo>();
+            services.AddScoped<IUserStateRepo, UserStateRepo>();
+            services.AddScoped<IUserStateService, UserStateService>();
+            services.AddTransient<GlobalFunctions>();
+
+
+
         }
     }
 }

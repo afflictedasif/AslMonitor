@@ -1,4 +1,5 @@
-﻿using AslMonitor.DAL.Models;
+﻿using AslMonitor.DAL;
+using AslMonitor.DAL.Models;
 using AslMonitor.DTOs;
 using Newtonsoft.Json;
 using System;
@@ -24,12 +25,12 @@ namespace AslMonitor.Utils
         ///<summary>
         ///Screenshots will be saved on this directory.
         ///</summary
-        public static string LocalImagePath = @"D:\SS\";
+        public static string LocalImagePath = @"D:\SS";
 
         ///<summary>
         ///Checks Internet connection on both client and server by hitting the server api.
         ///</summary>
-        public static bool CheckForInternetConnection(int timeoutMs = 10000)
+        public static bool CheckForInternetConnection(int timeoutMs = 2000)
         {
             try
             {
@@ -70,5 +71,49 @@ namespace AslMonitor.Utils
             };
             return currentUser;
         }
+
+        internal static CurrentUser? CurrentUserS()
+        {
+            using DatabaseContext _dbContext = new DatabaseContext();
+            JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
+            JwtSecurityToken tokenS = handler.ReadToken(_dbContext.LoginTokens.FirstOrDefault().Token) as JwtSecurityToken;
+            string userData = tokenS.Claims.First(claim => claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/userdata").Value;
+            UserInfo? user = JsonConvert.DeserializeObject<UserInfo>(userData!);
+            CurrentUser currentUser = new CurrentUser()
+            {
+                LoginID = user!.LoginID,
+                UserName = user!.UserName,
+                UserID = user!.UserID,
+                UserInfoID = user!.UserInfoID,
+                UserType = user!.UserType,
+                //IPAddress = GlobalFunctions.IpAddress(),
+                //UserPC = GlobalFunctions.UserPc(),
+                Ltude = "",
+            };
+            return currentUser;
+        }
+
+        public static string IpAddress()
+        {
+            //var feature = HttpHelper.HttpContext.Features.Get<IHttpConnectionFeature>();
+            //string LocalIPAddr = feature?.LocalIpAddress?.ToString();
+            //return LocalIPAddr;
+
+            //string a =  HttpHelper.HttpContext.Connection.RemoteIpAddress.ToString();
+            //return a;
+
+            IPHostEntry ipHostInfo = Dns.Resolve(Dns.GetHostName());
+            IPAddress ipAddress = ipHostInfo.AddressList[0];
+            return ipAddress.ToString();
+        }
+
+        public static string UserPc()
+        {
+            return Dns.GetHostName();
+        }
+
+
     }
+
+
 }

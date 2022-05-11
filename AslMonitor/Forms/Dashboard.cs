@@ -1,6 +1,8 @@
 ﻿using AslMonitor.DAL;
 using AslMonitor.DAL.Models;
+using AslMonitor.DAL.Repositories;
 using AslMonitor.DTOs;
+using AslMonitor.Services;
 using AslMonitor.Utils;
 using MaterialSkin.Controls;
 using Microsoft.EntityFrameworkCore;
@@ -23,11 +25,20 @@ namespace AslMonitor.Forms
 {
     public partial class Dashboard : MaterialForm
     {
+        private static System.Timers.Timer aTimer;
+        private readonly IUserStateService _userStateService;
+        private readonly IGenericRepo<ScreenShot> _ssRepo;
+        private readonly IGenericRepo<CLog> _clogRepo;
 
         public string? token { get; set; }
-        public Dashboard()
+        public bool Connected { get; set; }
+        public Dashboard(IUserStateService userStateService, IGenericRepo<ScreenShot> ssRepo, IGenericRepo<CLog> clogRepo)
         {
             InitializeComponent();
+            _userStateService = userStateService;
+            _ssRepo = ssRepo;
+            _clogRepo = clogRepo;
+            Connected = GlobalFunctions.CheckForInternetConnection();
         }
 
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -39,6 +50,8 @@ namespace AslMonitor.Forms
         private CurrentUser? user { get; set; }
         private async void Dashboard_Load(object sender, EventArgs e)
         {
+            if (Connected) btnReload.BackColor = Color.Green;
+            else btnReload.BackColor = Color.Red;
 
             //Loads the token from local database.
             using DatabaseContext _db = new DatabaseContext();
@@ -52,8 +65,47 @@ namespace AslMonitor.Forms
             }
             user = GlobalFunctions.GetCurrentUser(token);
             lblUserName.Text = user.UserName;
+            if (Connected)
+            { 
+                await RefreshAsync(); 
+            }
+            else
+            {
+                if (await _userStateService.GetLastStateAsync(user.UserID) is null)
+                {
+                    UserState userState = new UserState()
+                    {
+                        UserID = user.UserID,
+                        CurrentState = "Working",
+                        TimeFrom = DateTime.Now,
+                        Remarks = "Signed In"
+                    };
+                    await _userStateService.CreateUserStateAsync(userState);
 
-            await RefreshAsync();
+                    if (userState is null) return;
+                    lblCurrentStatus.Text = userState.CurrentState;
+                    lblTimeFrom.Text = userState.TimeFrom.ToString();
+                    lblTimeTo.Text = userState.TimeTo.ToString();
+                    lblRemarks.Text = userState.Remarks;
+                }
+                else
+                {
+                    UserState userState = new UserState()
+                    {
+                        UserID = user.UserID,
+                        CurrentState = "Working",
+                        TimeFrom = DateTime.Now,
+                        Remarks = "Signed In"
+                    };
+                    await _userStateService.ChangeUserStateAsync(userState);
+
+                    if (userState is null) return;
+                    lblCurrentStatus.Text = userState.CurrentState;
+                    lblTimeFrom.Text = userState.TimeFrom.ToString();
+                    lblTimeTo.Text = userState.TimeTo.ToString();
+                    lblRemarks.Text = userState.Remarks;
+                }
+            }
 
             cmbCurrentStatus.Items.Clear();
             cmbCurrentStatus.Items.Add("Working");
@@ -70,21 +122,37 @@ namespace AslMonitor.Forms
         {
             txtRemarks.Text = "";
 
-            string baseUri = "https://localhost:7110/";
-            using HttpClient http = new HttpClient();
-            http.BaseAddress = new Uri(baseUri);
-            http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-            using var response = await http.GetAsync("api/auth/lastState");
-            if (!response.IsSuccessStatusCode) return;
-            UserState? state = await response.Content.ReadFromJsonAsync<UserState>();
-            if (state is null) return;
-            lblCurrentStatus.Text = state.CurrentState;
-            lblTimeFrom.Text = state.TimeFrom.ToString();
-            lblTimeTo.Text = state.TimeTo.ToString();
-            lblRemarks.Text = state.Remarks;
+            if (Connected)
+            {
+                string baseUri = "https://localhost:7110/";
+                using HttpClient http = new HttpClient();
+                http.BaseAddress = new Uri(baseUri);
+                http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+                using var response = await http.GetAsync("api/auth/lastState");
+                if (!response.IsSuccessStatusCode) return;
+                UserState? state = await response.Content.ReadFromJsonAsync<UserState>();
+                if (state is null) return;
+                lblCurrentStatus.Text = state.CurrentState;
+                lblTimeFrom.Text = state.TimeFrom.ToString();
+                lblTimeTo.Text = state.TimeTo.ToString();
+                lblRemarks.Text = state.Remarks;
 
-            if (state.CurrentState.ToUpper() == "WORKING") switchWorkStatus.Checked = true;
-            else switchWorkStatus.Checked = false;
+                if (state.CurrentState.ToUpper() == "WORKING") switchWorkStatus.Checked = true;
+                else switchWorkStatus.Checked = false;
+            }
+            else
+            {
+                UserState state = await _userStateService.GetLastStateAsync(user.UserID);
+
+                if (state is null) return;
+                lblCurrentStatus.Text = state.CurrentState;
+                lblTimeFrom.Text = state.TimeFrom.ToString();
+                lblTimeTo.Text = state.TimeTo.ToString();
+                lblRemarks.Text = state.Remarks;
+
+                if (state.CurrentState.ToUpper() == "WORKING") switchWorkStatus.Checked = true;
+                else switchWorkStatus.Checked = false;
+            }
         }
 
         private void Dashboard_FormClosing(object sender, FormClosingEventArgs e)
@@ -125,10 +193,10 @@ namespace AslMonitor.Forms
                 //captureGraphics.CopyFromScreen(captureRectangle.Left, captureRectangle.Top, 0, 0, captureRectangle.Size);
                 captureGraphics.CopyFromScreen(0, 0, 0, 0, captureRectangle.Size);
 
-                Guid guid = Guid.NewGuid();
-                string FolderPath = GlobalFunctions.LocalImagePath;  // @"D:\SS\";
-                string FileName = guid.ToString() + ".jpg";
-                string path = FolderPath + FileName;
+                //Guid guid = Guid.NewGuid();
+                string FolderPath =  GenerateFolders( GlobalFunctions.LocalImagePath);  // @"D:\SS\";
+                string FileName = GenerateFileName();//guid.ToString() + ".jpg";
+                string path = FolderPath + "\\" + FileName;
                 //Saving the Image File (I am here Saving it in My drive).
                 captureBitmap.Save(path, ImageFormat.Jpeg);
 
@@ -138,7 +206,7 @@ namespace AslMonitor.Forms
 
 
                 //client.UploadFile()
-                if(GlobalFunctions.CheckForInternetConnection())
+                if (Connected)
                 {
                     WebClient client = new WebClient();
                     client.Headers.Add("Authorization", $"Bearer {token}");
@@ -146,6 +214,25 @@ namespace AslMonitor.Forms
                     var response = client.UploadFile("https://localhost:7110/api/Files/", path);
 
                     File.Delete(path);
+                }
+                else
+                {
+                    ScreenShot ss = new ScreenShot()
+                    {
+                        UserID = user.UserID,
+                        DirPath = FolderPath,
+                        FileName = FileName,
+                        InTime = DateTime.Now,
+                        InUserID = user.UserID,
+                        InUserPC = GlobalFunctions.UserPc(),
+                        InIPAddress = GlobalFunctions.IpAddress()
+                    };
+                    ScreenShot? ssCreated = _ssRepo.Create(ss);
+                    if (ssCreated == null)
+                    {
+                        string filePath = $"{FolderPath}\\{FileName}";
+                        File.Delete(path);
+                    }
                 }
                 captureBitmap.Dispose();
 
@@ -158,10 +245,23 @@ namespace AslMonitor.Forms
             }
         }
 
-        private static System.Timers.Timer aTimer;
-        private readonly DatabaseContext _db;
+        private string GenerateFolders(string rootPath)
+        {
+            string userID = user!.UserID.ToString();
+            string date = DateTime.Now.ToString("yyyy-MM-dd");
+            string folderPath = $"{rootPath}\\{userID}\\{date}";
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+            return folderPath;
+        }
 
-
+        private string GenerateFileName()
+        {
+            string guid = Guid.NewGuid().ToString();
+            return DateTime.Now.ToString("HH-mm-ss") + guid.Substring(0, 8) + ".jpg";
+        }
 
         ///<summary>
         ///Start the timer on a fixed interval.
@@ -203,18 +303,27 @@ namespace AslMonitor.Forms
             state.TimeFrom = DateTime.Now;
             state.UserID = user.UserID;
 
-            string st = JsonConvert.SerializeObject(state);
-            //string baseUri = "https://localhost:7110/";
-            string baseUri = GlobalFunctions.BaseUri;
-            using HttpClient http = new HttpClient();
-            http.BaseAddress = new Uri(baseUri);
-            http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-            using var response = await http.PostAsJsonAsync("api/auth/changeState", state);
-            if (!response.IsSuccessStatusCode)
+            if (Connected)
             {
-                //MaterialMessageBox.Show(text: "Something went wrong! Please try again.", UseRichTextBox: true, FlexibleMaterialForm.ButtonsPosition.Center);
-                return;
+                //string st = JsonConvert.SerializeObject(state);
+                //string baseUri = "https://localhost:7110/";
+                string baseUri = GlobalFunctions.BaseUri;
+                using HttpClient http = new HttpClient();
+                http.BaseAddress = new Uri(baseUri);
+                http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+                using var response = await http.PostAsJsonAsync("api/auth/changeState", state);
+                if (!response.IsSuccessStatusCode)
+                {
+                    //MaterialMessageBox.Show(text: "Something went wrong! Please try again.", UseRichTextBox: true, FlexibleMaterialForm.ButtonsPosition.Center);
+                    return;
+                }
             }
+            else
+            {
+                bool changed = await _userStateService.ChangeUserStateAsync(state);
+                if (!changed) return;
+            }
+
             //UserState? updatedState = await response.Content.ReadFromJsonAsync<UserState>();
             if (state.CurrentState?.ToUpper() != "WORKING")
             {
@@ -249,6 +358,61 @@ namespace AslMonitor.Forms
                 await SubmitData();
                 materialCard2.Show();
                 materialCard2.Enabled = true;
+            }
+        }
+
+        private async void btnReload_Click(object sender, EventArgs e)
+        {
+            if(GlobalFunctions.CheckForInternetConnection())
+            {
+                Connected = true;
+                btnReload.BackColor = Color.Green;
+                using DatabaseContext _db = new DatabaseContext();
+                string baseUri = GlobalFunctions.BaseUri;
+                using HttpClient http = new HttpClient();
+                http.BaseAddress = new Uri(baseUri);
+                http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+                if (await _db.UserStates.CountAsync() > 0)
+                {
+                    foreach (var state in _db.UserStates)
+                    {
+                        using var response = await http.PostAsJsonAsync("api/sync/updateState", state);
+                    }
+                }
+
+                if (await _db.CLogs.CountAsync() > 0)
+                {
+                    foreach (var log in _db.CLogs)
+                    {
+                        log.ClogID = 0;
+                        using var response = await http.PostAsJsonAsync("api/sync/addLogs", log);
+                    }
+                    await _db.Database.ExecuteSqlRawAsync("Delete From CLogs");
+                }
+
+                WebClient client = new WebClient();
+                client.Headers.Add("Authorization", $"Bearer {token}");
+
+                if (await _db.ScreenShots.CountAsync() > 0)
+                {
+                    foreach (var ss in _db.ScreenShots)
+                    {
+                        using var response = await http.PostAsJsonAsync("api/sync/addss", ss);
+                        string path = ss.DirPath + "\\" + ss.FileName;
+
+                        var response2 = client.UploadFile("https://localhost:7110/api/sync/files/", path);
+                        File.Delete(path);
+                    }
+                    await _db.Database.ExecuteSqlRawAsync("Delete From ScreenShots");
+                }
+
+                MaterialMessageBox.Show("Reloaded");
+            }
+            else
+            {
+                Connected = false;
+                btnReload.BackColor = Color.Red;
             }
         }
     }
