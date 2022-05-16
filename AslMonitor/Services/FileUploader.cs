@@ -9,6 +9,12 @@ public interface IFileUploader
 {
     //public Task<bool> SaveMultipleFilesAsync(List<IFormFile> files);
     //public Task<string[]?> SaveFileAsync(IFormFile file);
+
+    /// <summary>
+    /// Delete the file from the given path
+    /// </summary>
+    /// <param name="filePath">Fully qualified path of the file</param>
+    /// <returns></returns>
     public bool DeleteFile(string filePath);
 
 
@@ -24,6 +30,26 @@ public class FileUploader : IFileUploader
     {
         _currentUser = GlobalFunctions.CurrentUserS();
         //_webHostEnvironment = webHostEnvironment;
+    }
+
+    #region Unused Code
+
+    private string GenerateFolders(string rootPath)
+    {
+        string userID = _currentUser!.UserID.ToString();
+        string date = DateTime.Now.ToString("yyyy-MM-dd");
+        string folderPath = $"{rootPath}\\{userID}\\{date}";
+        if (!Directory.Exists(folderPath))
+        {
+            Directory.CreateDirectory(folderPath);
+        }
+        return folderPath;
+    }
+
+    private string GenerateFileName()
+    {
+        string guid = Guid.NewGuid().ToString();
+        return DateTime.Now.ToString("HH-mm-ss") + guid.Substring(0, 8) + ".jpg";
     }
 
     //public async Task<bool> SaveMultipleFilesAsync(List<IFormFile> files)
@@ -82,6 +108,13 @@ public class FileUploader : IFileUploader
     //    }
     //}
 
+    #endregion
+
+    /// <summary>
+    /// Delete the file from the given path
+    /// </summary>
+    /// <param name="filePath">Fully qualified path of the file</param>
+    /// <returns></returns>
     public bool DeleteFile(string filePath)
     {
         try
@@ -98,23 +131,7 @@ public class FileUploader : IFileUploader
 
     }
 
-    private string GenerateFolders(string rootPath)
-    {
-        string userID = _currentUser!.UserID.ToString();
-        string date = DateTime.Now.ToString("yyyy-MM-dd");
-        string folderPath = $"{rootPath}\\{userID}\\{date}";
-        if (!Directory.Exists(folderPath))
-        {
-            Directory.CreateDirectory(folderPath);
-        }
-        return folderPath;
-    }
 
-    private string GenerateFileName()
-    {
-        string guid = Guid.NewGuid().ToString();
-        return DateTime.Now.ToString("HH-mm-ss") + guid.Substring(0, 8) + ".jpg";
-    }
 
 }
 

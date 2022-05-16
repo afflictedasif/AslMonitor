@@ -72,10 +72,15 @@ namespace AslMonitor.Utils
             return currentUser;
         }
 
+        /// <summary>
+        /// Gets the token from the database and extract user data from it. Return part of the data as CurrentUser Object
+        /// </summary>
+        /// <returns>CurrentUser Object</returns>
         internal static CurrentUser? CurrentUserS()
         {
             using DatabaseContext _dbContext = new DatabaseContext();
             JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
+            if (!_dbContext.LoginTokens.Any()) return null;
             JwtSecurityToken tokenS = handler.ReadToken(_dbContext.LoginTokens.FirstOrDefault().Token) as JwtSecurityToken;
             string userData = tokenS.Claims.First(claim => claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/userdata").Value;
             UserInfo? user = JsonConvert.DeserializeObject<UserInfo>(userData!);
@@ -93,6 +98,10 @@ namespace AslMonitor.Utils
             return currentUser;
         }
 
+        /// <summary>
+        /// Returns local Ip Address
+        /// </summary>
+        /// <returns></returns>
         public static string IpAddress()
         {
             //var feature = HttpHelper.HttpContext.Features.Get<IHttpConnectionFeature>();
@@ -107,6 +116,10 @@ namespace AslMonitor.Utils
             return ipAddress.ToString();
         }
 
+        /// <summary>
+        /// Return Local Pc Name
+        /// </summary>
+        /// <returns></returns>
         public static string UserPc()
         {
             return Dns.GetHostName();

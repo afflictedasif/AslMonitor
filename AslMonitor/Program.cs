@@ -38,7 +38,10 @@ namespace AslMonitor
         }
 
 
-
+        /// <summary>
+        /// Register Types for dependency injection
+        /// </summary>
+        /// <param name="services"></param>
         private static void ConfigureServices(ServiceCollection services)
         {
             services.AddScoped<Form1>();

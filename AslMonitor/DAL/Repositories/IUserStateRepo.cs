@@ -193,25 +193,28 @@ namespace AslMonitor.DAL.Repositories
             try
             {
                 using DatabaseContext context = new DatabaseContext();
-                string token = context.LoginTokens.FirstOrDefault()!.Token;
-                if (string.IsNullOrEmpty(token))
-                    currentUser = GlobalFunctions.GetCurrentUser(token);
+                //string token = context.LoginTokens.FirstOrDefault()!.Token;
+                //if (string.IsNullOrEmpty(token))
+                //    currentUser = GlobalFunctions.GetCurrentUser(token);
+                currentUser = GlobalFunctions.CurrentUserS();
 
-                context.ChangeTracker.Clear();
 
                 if (userState == null) return false;
 
+                userState.UserStateId = context.UserStates.FirstOrDefault().UserStateId;
                 userState.UpTime = DateTime.Now;
                 userState.UpIPAddress = GlobalFunctions.IpAddress();
                 userState.UpUserPC = GlobalFunctions.UserPc();
                 userState.UpUserID = currentUser?.UserID;
 
 
-                context.Entry(userState).State = EntityState.Modified;
+                context.ChangeTracker.Clear();
+                //context.Entry(userState).State = EntityState.Modified;
+                context.UserStates.Update(userState);
                 int rowsAffected = await context.SaveChangesAsync();
                 return rowsAffected > 0;
             }
-            catch
+            catch(Exception ex)
             {
                 return false;
             }

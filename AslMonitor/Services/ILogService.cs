@@ -8,14 +8,68 @@ namespace AslMonitor.Services
 {
     public interface ILogService
     {
+        /// <summary>
+        /// Inserts JSON serialized data of the given ID into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="UserID">UserID of the user that made the action</param>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="Id">Primary Key (ID) of the record</param>
+        /// <returns></returns>
         public CLog? InsertLog<T>(int UserID, string TableName, string logType, int Id) where T : class;
+        /// Inserts JSON serialized data of the given ID into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="Id">Primary Key (ID) of the record</param>
+        /// <returns></returns>
         public Task<bool> InsertLogAsync<T>(string TableName, string logType, string Id) where T : class;
+        /// Inserts JSON serialized data of the given ID into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="Id">Primary Key (ID) of the record</param>
+        /// <returns></returns>
         public bool InsertLog<T>(string TableName, string logType, int Id) where T : class;
+        /// Inserts JSON serialized data of the given ID into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="Id">Primary Key (ID) of the record</param>
+        /// <returns></returns>
         public Task<bool> InsertLogAsync<T>(string TableName, string logType, int Id) where T : class;
+        /// Inserts JSON serialized data of the given ID into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="Id">Primary Key (ID) of the record</param>
+        /// <returns></returns>
 
         public bool InsertLog<T>(string TableName, string logType, string Id) where T : class;
+
+        /// <summary>
+        /// Inserts JSON serialized data of the given query into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="whereClause">Where clause to find the record from sql database.</param>
+        /// <returns></returns>
         public bool InsertLogWithWhereClause<T>(string TableName, string logType, string whereClause) where T : class;
 
+        /// <summary>
+        /// Inserts JSON serialized data of the given query into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="whereClause">Where clause to find the record from sql database.</param>
+        /// <returns></returns>
         public Task<bool> InsertLogWithWhereClauseAsync<T>(string TableName, string logType, string whereClause) where T : class;
 
     }
@@ -36,10 +90,23 @@ namespace AslMonitor.Services
 
             currentUser = GlobalFunctions.CurrentUserS();
         }
+
+        /// <summary>
+        /// Inserts JSON serialized data of the given ID into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="UserID">UserID of the user that made the action</param>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="Id">Primary Key (ID) of the record</param>
+        /// <returns></returns>
         public CLog? InsertLog<T>(int UserID, string TableName, string logType, int Id) where T : class
         {
             try
             {
+                if(currentUser is null) 
+                    currentUser = GlobalFunctions.CurrentUserS();
+
                 string logData = rdbService.GetKeyValuePairOfData<T>(Id);
 
                 CLog cLog = new CLog();
@@ -60,10 +127,20 @@ namespace AslMonitor.Services
             }
         }
 
+        /// Inserts JSON serialized data of the given ID into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="Id">Primary Key (ID) of the record</param>
+        /// <returns></returns>
         public bool InsertLog<T>(string TableName, string logType, int Id) where T : class
         {
             try
             {
+                if (currentUser is null)
+                    currentUser = GlobalFunctions.CurrentUserS();
+
                 string logData = rdbService.GetKeyValuePairOfData<T>(Id);
                 CLog cLog = new CLog();
                 cLog.LogData = logData;
@@ -82,11 +159,19 @@ namespace AslMonitor.Services
                 return false;
             }
         }
+        /// Inserts JSON serialized data of the given ID into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="Id">Primary Key (ID) of the record</param>
+        /// <returns></returns>
         public async Task<bool> InsertLogAsync<T>(string TableName, string logType, int Id) where T : class
         {
             try
             {
-                //currentUser = await _gFunc.CurrentUserAsync();
+                if (currentUser is null)
+                    currentUser = GlobalFunctions.CurrentUserS();
                 string logData = await  rdbService.GetKeyValuePairOfDataAsync<T>(Id);
                 CLog cLog = new CLog();
                 cLog.LogData = logData;
@@ -106,10 +191,19 @@ namespace AslMonitor.Services
             }
         }
 
+        /// Inserts JSON serialized data of the given ID into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="Id">Primary Key (ID) of the record</param>
+        /// <returns></returns>
         public bool InsertLog<T>(string TableName, string logType, string Id) where T : class
         {
             try
             {
+                if (currentUser is null)
+                    currentUser = GlobalFunctions.CurrentUserS();
                 string logData = rdbService.GetKeyValuePairOfData<T>(Id);
                 CLog cLog = new CLog();
                 cLog.LogData = logData;
@@ -129,11 +223,19 @@ namespace AslMonitor.Services
                 return false;
             }
         }
+        /// Inserts JSON serialized data of the given ID into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="Id">Primary Key (ID) of the record</param>
+        /// <returns></returns>
         public async Task<bool> InsertLogAsync<T>(string TableName, string logType, string Id) where T : class
         {
             try
             {
-                //currentUser = await _gFunc.CurrentUserAsync();
+                if (currentUser is null)
+                    currentUser = GlobalFunctions.CurrentUserS();
                 string logData = await rdbService.GetKeyValuePairOfDataAsync<T>(Id);
                 CLog cLog = new CLog();
                 cLog.LogData = logData;
@@ -154,12 +256,23 @@ namespace AslMonitor.Services
             }
         }
 
+        /// <summary>
+        /// Inserts JSON serialized data of the given query into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="whereClause">Where clause to find the record from sql database.</param>
+        /// <returns></returns>
         public bool InsertLogWithWhereClause<T>(string TableName, string logType, string whereClause) where T : class
         {
             string query = "";
             query += $"SELECT Top 1 * FROM {TableName} {whereClause}";
             try
             {
+                if (currentUser is null)
+                    currentUser = GlobalFunctions.CurrentUserS();
+
                 string logData = rdbService.GetKeyValuePairOfDataWithSQL<T>(query);
                 CLog cLog = new CLog();
                 cLog.LogData = logData;
@@ -180,6 +293,14 @@ namespace AslMonitor.Services
             }
         }
 
+        /// <summary>
+        /// Inserts JSON serialized data of the given query into log table
+        /// </summary>
+        /// <typeparam name="T">Table type</typeparam>
+        /// <param name="TableName">Table Name</param>
+        /// <param name="logType">Log Type: Update, Delete, Login, Logout, etc</param>
+        /// <param name="whereClause">Where clause to find the record from sql database.</param>
+        /// <returns></returns>
         public async Task<bool> InsertLogWithWhereClauseAsync<T>(string TableName, string logType, string whereClause) where T : class
         {
             //currentUser = await _gFunc.CurrentUserAsync();
@@ -187,6 +308,9 @@ namespace AslMonitor.Services
             query += $"SELECT Top 1 * FROM {TableName} {whereClause}";
             try
             {
+                if (currentUser is null)
+                    currentUser = GlobalFunctions.CurrentUserS();
+
                 string logData = await rdbService.GetKeyValuePairOfDataWithSQLAsync<T>(query);
                 CLog cLog = new CLog();
                 cLog.LogData = logData;

@@ -40,16 +40,26 @@ namespace AslMonitor
         }
 
 
-
+        /// <summary>
+        /// Checks if internet connection exists
+        /// and show connection status by messagebox.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Form1_Load(object sender, EventArgs e)
         {
 
-            bool connected = _dashboard.Connected;
+            bool connected = GlobalFunctions.CheckForInternetConnection();
             if (connected) MaterialMessageBox.Show("Connected");
             else MaterialMessageBox.Show("Not Connected");
 
         }
 
+        /// <summary>
+        /// Hit when form is minimizing
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Form1_Resize(object sender, EventArgs e)
         {
             //if the form is minimized  
@@ -65,6 +75,12 @@ namespace AslMonitor
             }
         }
 
+        /// <summary>
+        /// Hit when tray icon is double clicked.
+        /// Form will Show and tray icon will hide
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             Show();
@@ -72,6 +88,12 @@ namespace AslMonitor
             notifyIcon1.Visible = false;
         }
 
+        /// <summary>
+        /// Hit when form close button is clicked.
+        /// Form hides instead of closing. tray icon gets visible.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             Hide();
@@ -84,6 +106,13 @@ namespace AslMonitor
 
         }
 
+        /// <summary>
+        /// Hit when form is shown
+        /// Fetch the token from the Local Database.
+        /// If token is found then form1 is closed and dashboard form will show in the same location.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void Form1_Shown(object sender, EventArgs e)
         {
             using DatabaseContext _db = new DatabaseContext();
@@ -100,16 +129,31 @@ namespace AslMonitor
             }
         }
 
+        /// <summary>
+        /// close this form and show the signup form in the same location
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btnSignUp_Click(object sender, EventArgs e)
         {
             //SignUp _signUp = new SignUp();
+            _signUp._loginForm = this;
             _signUp.Show();
+
             _signUp.Location = this.Location;
 
             Close();
             notifyIcon1.Visible = false;
         }
 
+        /// <summary>
+        /// Sign in the user and move to Dashboard.
+        /// First create a login model object and send it to server api,
+        /// server returns a token which is saved in the local database.
+        /// this form is closed and dashboard form will be shown in the same location.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void btnSignIn_Click(object sender, EventArgs e)
         {
             LoginModel loginModel = new LoginModel()
@@ -118,9 +162,7 @@ namespace AslMonitor
                 Password = txtLoginPw.Text,
             };
 
-
             //var data = new StringContent(JsonConvert.SerializeObject(loginModel));
-
 
             string baseUri = "https://localhost:7110/";
             using HttpClient http = new HttpClient();
@@ -141,10 +183,6 @@ namespace AslMonitor
                 await _db.SaveChangesAsync();
             }
 
-
-
-            //Dashboard _dashboard = new Dashboard();
-            ////_dashboard.token = token!.token;
             _dashboard.Show();
             _dashboard.Location = this.Location;
 

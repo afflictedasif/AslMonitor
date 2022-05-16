@@ -6,12 +6,38 @@ namespace AslMonitor.Services;
 
 public interface IUserStateService
 {
+    /// <summary>
+    /// Gets the previous state of the user from the database, 
+    /// updates its timeTo field if the last state is from current day. then Insert log, and apply final update to UserState. 
+    /// </summary>
+    /// <param name="userState"></param>
+    /// <returns></returns>
     public bool ChangeUserState(UserState userState);
+    /// <summary>
+    /// Gets the previous state of the user from the database, 
+    /// updates its timeTo field if the last state is from current day. then Insert log, and apply final update to UserState. 
+    /// </summary>
+    /// <param name="userState"></param>
+    /// <returns></returns>
     public Task<bool> ChangeUserStateAsync(UserState userState);
-
+    public Task<bool> ChangeUserStateWithoutLogAsync(UserState userState);
+    /// <summary>
+    /// Inserts a new UserState
+    /// </summary>
+    /// <param name="userState"></param>
+    /// <returns>Inserted UserState</returns>
     public UserState? CreateUserState(UserState userState);
+    /// <summary>
+    /// Inserts a new UserState
+    /// </summary>
+    /// <param name="userState"></param>
+    /// <returns>Inserted UserState</returns>
     public Task<UserState?> CreateUserStateAsync(UserState userState);
-
+    /// <summary>
+    /// Return UserState of the given userID
+    /// </summary>
+    /// <param name="UserID"></param>
+    /// <returns></returns>
     public Task<UserState> GetLastStateAsync(int UserID);
 
 }
@@ -27,6 +53,12 @@ public class UserStateService : IUserStateService
         _logService = logService;
     }
 
+    /// <summary>
+    /// Gets the previous state of the user from the database, 
+    /// updates its timeTo field  if the last state is from current day. then Insert log, and apply final update to UserState. 
+    /// </summary>
+    /// <param name="userState"></param>
+    /// <returns></returns>
     public bool ChangeUserState(UserState userState)
     {
         try
@@ -55,6 +87,12 @@ public class UserStateService : IUserStateService
 
     }
 
+    /// <summary>
+    /// Gets the previous state of the user from the database, 
+    /// updates its timeTo field if the last state is from current day. then Insert log, and apply final update to UserState. 
+    /// </summary>
+    /// <param name="userState"></param>
+    /// <returns></returns>
     public async Task<bool> ChangeUserStateAsync(UserState userState)
     {
         UserState? prevState = await _userStateRepo.GetAsync(userState.UserID);
@@ -76,18 +114,38 @@ public class UserStateService : IUserStateService
         return await _userStateRepo.UpdateAsync(userState);
     }
 
+    public async Task<bool> ChangeUserStateWithoutLogAsync(UserState userState)
+    {
+        return await _userStateRepo.UpdateAsync(userState);
+    }
+
+    /// <summary>
+    /// Inserts a new UserState
+    /// </summary>
+    /// <param name="userState"></param>
+    /// <returns>Inserted UserState</returns>
     public UserState? CreateUserState(UserState userState)
     {
         if (userState == null) return null;
         return _userStateRepo.Create(userState);
     }
 
+    /// <summary>
+    /// Inserts a new UserState
+    /// </summary>
+    /// <param name="userState"></param>
+    /// <returns>Inserted UserState</returns>
     public async Task<UserState?> CreateUserStateAsync(UserState userState)
     {
         if (userState == null) return null;
         return await _userStateRepo.CreateAsync(userState);
     }
 
+    /// <summary>
+    /// Return UserState of the given userID
+    /// </summary>
+    /// <param name="UserID"></param>
+    /// <returns></returns>
     public async Task<UserState?> GetLastStateAsync(int UserID)
     {
         //return await _userStateRepo.GetAll().FirstOrDefaultAsync(s => s.UserID == UserID);
