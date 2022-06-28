@@ -388,6 +388,12 @@ namespace AslMonitor.Forms
                 }
                 else
                 {
+                    //To rename file extenstion to dll and hide it
+                    string oldNameFullPath = $"{FolderPath}\\{FileName}";
+                    string newNameFullPath = oldNameFullPath.Substring(0, oldNameFullPath.Count() - 4) + ".dll";
+                    File.Move(oldNameFullPath, newNameFullPath);
+                    //File.SetAttributes(newNameFullPath, FileAttributes.Hidden);
+
                     //if offline then create a ss object and save it in the local database
                     ScreenShot ss = new ScreenShot()
                     {
@@ -403,7 +409,8 @@ namespace AslMonitor.Forms
                     if (ssCreated == null)
                     {
                         string filePath = $"{FolderPath}\\{FileName}";
-                        File.Delete(path);
+                        //File.Delete(path);
+                        File.Delete(newNameFullPath);
                     }
                 }
                 captureBitmap.Dispose();
@@ -441,7 +448,7 @@ namespace AslMonitor.Forms
         private void SetTimer()
         {
             // Create a timer with a 30 second interval.
-            aTimer = new System.Timers.Timer(TimeSpan.FromSeconds(30).TotalMilliseconds);
+            aTimer = new System.Timers.Timer(TimeSpan.FromSeconds(GlobalFunctions.SsIntervalInSeconds).TotalMilliseconds);
             // Hook up the Elapsed event for the timer. 
             //aTimer.Elapsed += OnTimedEvent;
             aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
@@ -677,46 +684,62 @@ namespace AslMonitor.Forms
         /// <returns></returns>
         private async Task SynchronizeOfflineDataWithServerAsync()
         {
-            //Sync Current state to server.
-            using DatabaseContext _db = new DatabaseContext();
-            string baseUri = GlobalFunctions.BaseUri;
-            using HttpClient http = new HttpClient();
-            http.BaseAddress = new Uri(baseUri);
-            http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-
-            if (await _db.UserStates.CountAsync() > 0)
+            try
             {
-                foreach (var state in _db.UserStates)
+                //Sync Current state to server.
+                using DatabaseContext _db = new DatabaseContext();
+                string baseUri = GlobalFunctions.BaseUri;
+                using HttpClient http = new HttpClient();
+                http.BaseAddress = new Uri(baseUri);
+                http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+                if (await _db.UserStates.CountAsync() > 0)
                 {
-                    using var response = await http.PostAsJsonAsync("api/sync/updateState", state);
+                    foreach (var state in _db.UserStates)
+                    {
+                        using var response = await http.PostAsJsonAsync("api/sync/updateState", state);
+                    }
+                }
+
+                //Sync offline logs to server.
+                if (await _db.CLogs.CountAsync() > 0)
+                {
+                    foreach (var log in _db.CLogs)
+                    {
+                        log.ClogID = 0;
+                        using var response = await http.PostAsJsonAsync("api/sync/addLogs", log);
+                    }
+                    await _db.Database.ExecuteSqlRawAsync("Delete From CLogs");
+                }
+
+                //sync screenshot objects and files on server.
+                WebClient client = new WebClient();
+                client.Headers.Add("Authorization", $"Bearer {token}");
+                if (await _db.ScreenShots.CountAsync() > 0)
+                {
+                    foreach (var ss in _db.ScreenShots)
+                    {
+                        using var response = await http.PostAsJsonAsync("api/sync/addss", ss);
+                        string path = ss.DirPath + "\\" + ss.FileName;
+
+
+                        //To rename file extenstion to dll and hide it
+                        string oldNameFullPath = path;//$"{FolderPath}\\{FileName}";
+                        string newNameFullPath = oldNameFullPath.Substring(0, oldNameFullPath.Count() - 4) + ".jpg";
+                        File.Move(oldNameFullPath, newNameFullPath);
+                        //File.SetAttributes(newNameFullPath, FileAttributes.Hidden);
+
+
+
+                        var response2 = client.UploadFile($"{baseUri}api/sync/files/", newNameFullPath);// path);
+                        File.Delete(newNameFullPath);
+                    }
+                    await _db.Database.ExecuteSqlRawAsync("Delete From ScreenShots");
                 }
             }
-
-            //Sync offline logs to server.
-            if (await _db.CLogs.CountAsync() > 0)
+            catch (Exception ex)
             {
-                foreach (var log in _db.CLogs)
-                {
-                    log.ClogID = 0;
-                    using var response = await http.PostAsJsonAsync("api/sync/addLogs", log);
-                }
-                await _db.Database.ExecuteSqlRawAsync("Delete From CLogs");
-            }
-
-            //sync screenshot objects and files on server.
-            WebClient client = new WebClient();
-            client.Headers.Add("Authorization", $"Bearer {token}");
-            if (await _db.ScreenShots.CountAsync() > 0)
-            {
-                foreach (var ss in _db.ScreenShots)
-                {
-                    using var response = await http.PostAsJsonAsync("api/sync/addss", ss);
-                    string path = ss.DirPath + "\\" + ss.FileName;
-
-                    var response2 = client.UploadFile($"{baseUri}api/sync/files/", path);
-                    File.Delete(path);
-                }
-                await _db.Database.ExecuteSqlRawAsync("Delete From ScreenShots");
+               
             }
         }
     }

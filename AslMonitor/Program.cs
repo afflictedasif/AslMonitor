@@ -29,11 +29,11 @@ namespace AslMonitor
 
             using (ServiceProvider serviceProvider = services.BuildServiceProvider())
             {
+                var context = serviceProvider.GetRequiredService<DatabaseContext>();
+                context.Database.EnsureCreated();
+
                 var form1 = serviceProvider.GetRequiredService<Form1>();
                 Application.Run(form1);
-
-
-
             }
         }
 
@@ -60,7 +60,7 @@ namespace AslMonitor
             services.AddScoped<IUserStateService, UserStateService>();
             services.AddTransient<GlobalFunctions>();
 
-
+            
 
         }
     }

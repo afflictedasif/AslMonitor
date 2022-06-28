@@ -1,4 +1,5 @@
 ﻿using AslMonitor.DAL.Models;
+using AslMonitor.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -30,7 +31,9 @@ public class DatabaseContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         //optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information);
-        string fileLocation = "D:\\VS Repos\\AslMonitor\\AslMonitor\\TestDatabase.db";
+
+        string fileLocation = GlobalFunctions.DatabaseLocation;
+
         optionsBuilder.UseSqlite($"Filename={fileLocation}", options =>
         {
             options.MigrationsAssembly(Assembly.GetExecutingAssembly().FullName);

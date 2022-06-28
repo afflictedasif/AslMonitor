@@ -27,6 +27,11 @@ namespace AslMonitor.Utils
         ///</summary
         public static string LocalImagePath = @"D:\SS";
 
+        public static int SsIntervalInSeconds = 30;
+
+        public static string DatabaseLocation = "D:\\VS Repos\\AslMonitor\\AslMonitor\\TestDatabase1.db";
+
+
         ///<summary>
         ///Checks Internet connection on both client and server by hitting the server api.
         ///</summary>
