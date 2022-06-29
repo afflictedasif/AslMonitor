@@ -34,9 +34,13 @@ namespace AslMonitor.Forms
         public string? token { get; set; }
         //public bool Connected { get; set; }
 
+        public bool forceClose { get; set; }
+
 
         //private bool previousConnectionStatus { get; set; }
-        private bool offlineDataExists { get
+        private bool offlineDataExists
+        {
+            get
             {
                 using var db = new DatabaseContext();
                 return (db.CLogs.Any() || db.ScreenShots.Any());
@@ -99,9 +103,17 @@ namespace AslMonitor.Forms
         /// <param name="e"></param>
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            Show();
-            this.WindowState = FormWindowState.Normal;
-            notifyIcon1.Visible = false;
+            if (!this.IsDisposed)
+            {
+                Show();
+                this.WindowState = FormWindowState.Normal;
+                notifyIcon1.Visible = false;
+            }
+            else notifyIcon1.Visible = false;
+            //catch (Exception ex)
+            //{
+            //    notifyIcon1.Visible = false;
+            //}
         }
         /// <summary>
         /// Represent the current user
@@ -122,6 +134,7 @@ namespace AslMonitor.Forms
         /// <param name="e"></param>
         private async void Dashboard_Load(object sender, EventArgs e)
         {
+            forceClose = false;
             //bool isOnline = Connected;
 
             //Loads the token from local database.
@@ -132,6 +145,9 @@ namespace AslMonitor.Forms
             //Extract informations about the current user from the token
             if (token == null)
             {
+                //notifyIcon1.Visible = false;
+                //forceClose = true;
+                //this.Close();
                 return;
             }
             user = GlobalFunctions.GetCurrentUser(token);
@@ -196,8 +212,55 @@ namespace AslMonitor.Forms
 
             ReloadComboBoxStatus();
 
+            DeletePrevDirectories();
         }
 
+
+        public async Task loadFirstTime()
+        {
+            user = GlobalFunctions.GetCurrentUser(token);
+            lblUserName.Text = user.UserName;
+
+            //Sync Offline Data first with server
+            bool isOnline = GlobalFunctions.CheckForInternetConnection();
+            ChangeReloadButtonColor(isOnline);
+            if (isOnline && offlineDataExists)
+            {
+                await SynchronizeOfflineDataWithServerAsync();
+            }
+            //previousConnectionStatus = isOnline;
+
+
+            await RefreshAsync();
+
+            ReloadComboBoxStatus();
+
+            DeletePrevDirectories();
+        }
+
+        private void DeletePrevDirectories()
+        {
+            if (!Directory.Exists(GlobalFunctions.LocalImagePath))
+            {
+                return;
+            }
+            var Directories = Directory.GetDirectories(GlobalFunctions.LocalImagePath);
+
+            foreach (string directory in Directories)
+            {
+                var subDirs = Directory.GetDirectories(directory);
+
+                foreach (var subDir in subDirs)
+                {
+                    if (subDir != directory + "\\" + DateTime.Now.ToString("yyyy-MM-dd"))
+                    {
+                        var files = Directory.GetFiles(subDir);
+                        if (files.Length == 0)
+                            Directory.Delete(subDir);
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Clear combobox and add different items based on current status.
@@ -245,7 +308,8 @@ namespace AslMonitor.Forms
             if (isOnline)
             {
                 // if online, then get last state from the server and update UI state
-                string baseUri = "https://localhost:7110/";
+                //string baseUri = "https://localhost:7110/";
+                string baseUri = GlobalFunctions.BaseUri;
                 using HttpClient http = new HttpClient();
                 http.BaseAddress = new Uri(baseUri);
                 http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
@@ -328,9 +392,16 @@ namespace AslMonitor.Forms
 
         private void Dashboard_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Hide();
-            notifyIcon1.Visible = true;
-            e.Cancel = true;
+            if (!forceClose)
+            {
+                Hide();
+                notifyIcon1.Visible = true;
+                e.Cancel = true;
+            }
+            else
+            {
+                notifyIcon1.Visible = false;
+            }
         }
 
         ///<summary>
@@ -382,7 +453,9 @@ namespace AslMonitor.Forms
                     //if online then the file is uploaded to the server and then delete it.
                     WebClient client = new WebClient();
                     client.Headers.Add("Authorization", $"Bearer {token}");
-                    var response = client.UploadFile("https://localhost:7110/api/Files/", path);
+                    string uri = GlobalFunctions.BaseUri + "api/Files/";
+                    //var response = client.UploadFile("https://localhost:7110/api/Files/", path);
+                    var response = client.UploadFile(uri, path);
 
                     File.Delete(path);
                 }
@@ -461,7 +534,8 @@ namespace AslMonitor.Forms
         ///</summary>
         private async void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
-            await CaptureMyScreen();
+            if (token is not null)
+                await CaptureMyScreen();
         }
 
         private async void btnSubmit_Click(object sender, EventArgs e)
@@ -739,7 +813,7 @@ namespace AslMonitor.Forms
             }
             catch (Exception ex)
             {
-               
+
             }
         }
     }

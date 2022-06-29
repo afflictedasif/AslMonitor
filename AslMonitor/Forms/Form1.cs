@@ -31,6 +31,12 @@ namespace AslMonitor
         //    }
         //}
 
+        //public HomeController(IServiceProvider serviceProvider)
+        //{
+        //    var service = serviceProvider.GetService<ITestService>();
+        //    int rnd = service.GenerateRandom();
+        //}
+
         public Form1(Dashboard dashboard, SignUp signUp)
         {
             _dashboard = dashboard;
@@ -119,13 +125,24 @@ namespace AslMonitor
             LoginToken? loginToken = await _db.LoginTokens.FirstOrDefaultAsync();
             if (loginToken is not null)
             {
+
                 //Dashboard _dashboard = new Dashboard();
-                _dashboard.Show();
                 _dashboard.token = loginToken.Token;
                 _dashboard.Location = this.Location;
 
+                await _dashboard.loadFirstTime();
+
+                _dashboard.Show();
+
                 Close();
                 notifyIcon1.Visible = false;
+            }
+            else
+            {
+                _dashboard.Hide();
+                _dashboard.notifyIcon1.Visible = false;
+                //_dashboard.forceClose = true;
+                //_dashboard.Close();
             }
         }
 
@@ -164,7 +181,8 @@ namespace AslMonitor
 
             //var data = new StringContent(JsonConvert.SerializeObject(loginModel));
 
-            string baseUri = "https://localhost:7110/";
+            //string baseUri = "https://localhost:7110/";
+            string baseUri = GlobalFunctions.BaseUri;
             using HttpClient http = new HttpClient();
             http.BaseAddress = new Uri(baseUri);
             using var response = await http.PostAsJsonAsync("api/auth/Login", loginModel);

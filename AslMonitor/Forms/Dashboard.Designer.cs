@@ -358,7 +358,7 @@
 
         #endregion
 
-        private NotifyIcon notifyIcon1;
+        public NotifyIcon notifyIcon1;
         private MaterialSkin.Controls.MaterialSwitch switchWorkStatus;
         private MaterialSkin.Controls.MaterialLabel lblUserName;
         private MaterialSkin.Controls.MaterialLabel lblTimeFrom;

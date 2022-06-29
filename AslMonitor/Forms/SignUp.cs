@@ -88,7 +88,8 @@ namespace AslMonitor.Forms
 
 
 
-            string baseUri = "https://localhost:7110/";
+            //string baseUri = "https://localhost:7110/";
+            string baseUri = GlobalFunctions.BaseUri;
             using HttpClient http = new HttpClient();
             http.BaseAddress = new Uri(baseUri);
             //http.DefaultRequestHeaders.Accept.Clear();
@@ -109,12 +110,13 @@ namespace AslMonitor.Forms
             await _db.SaveChangesAsync();
 
             //Dashboard _dashboard = new Dashboard();
+            _dashboard.token = token.token;
+            await _dashboard.loadFirstTime();
             _dashboard.Show();
             _dashboard.Location = this.Location;
             //formD.token = token.token;
             Close();
             //notifyIcon1.Visible = false;
-
         }
 
 
