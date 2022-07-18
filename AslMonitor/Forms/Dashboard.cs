@@ -318,6 +318,7 @@ namespace AslMonitor.Forms
                 UserState? state = await response.Content.ReadFromJsonAsync<UserState>();
 
                 //Added on 9/7/22
+                // if last state is from previous days then last state's timeto is given on the last minute of the last state's day. 
                 if (state?.TimeFrom?.Date < DateTime.Now.Date)
                 {
                     state.TimeTo = state.TimeFrom?.Date.AddDays(1).AddMinutes(-1);
@@ -331,8 +332,10 @@ namespace AslMonitor.Forms
 
                     state.TimeFrom = DateTime.Now;
                     state.TimeTo = null;
+                    state.CurrentState = "Working";
+                    state.Remarks = "Day Started";
                     //if online then the new userState will be pushed to server
-                    using var response3 = await http.PostAsJsonAsync("api/auth/changeState", state);
+                    using var response3 = await http.PostAsJsonAsync("api/auth/changeStateWithoutLog", state);
                     if (!response3.IsSuccessStatusCode)
                     {
                         return;
@@ -340,7 +343,6 @@ namespace AslMonitor.Forms
 
                     //Also update state in local database
                     bool changed = await _userStateService.ChangeUserStateWithoutLogAsync(state);
-                    //bool a = true;
 
                 }
                 UpdateUI(state);
@@ -350,6 +352,7 @@ namespace AslMonitor.Forms
 
 
                 //For local data
+                //If local db has no user state then create one.
                 if (await _userStateService.GetLastStateAsync(user.UserID) is null)
                 {
                     UserState userState = new UserState()
@@ -410,13 +413,34 @@ namespace AslMonitor.Forms
                     //Added on 9/7/22
                     if (state?.TimeFrom?.Date < DateTime.Now.Date)
                     {
-                        state.TimeTo = state.TimeFrom?.Date.AddDays(1).AddSeconds(-1);
+                        //state.TimeTo = state.TimeFrom?.Date.AddDays(1).AddSeconds(-1);
 
+                        ////Also update state in local database
+                        //bool changed = await _userStateService.ChangeUserStateWithoutLogAsync(state);
+                        //bool a = true;
+
+
+
+
+                        //18jul22
+
+                        state.TimeTo = state.TimeFrom?.Date.AddDays(1).AddMinutes(-1);
+                        //if online then the new userState will be pushed to server
                         //Also update state in local database
-                        bool changed = await _userStateService.ChangeUserStateWithoutLogAsync(state);
+                        bool changed2 = await _userStateService.ChangeUserStateAsync(state);
                         bool a = true;
 
+
+                        state.TimeFrom = DateTime.Now;
+                        state.TimeTo = null;
+                        state.CurrentState = "Working";
+                        state.Remarks = "Day Started";
+                        bool changed3 = await _userStateService.ChangeUserStateWithoutLogAsync(state);
+
                     }
+
+
+
 
                     UpdateUI(state);
 

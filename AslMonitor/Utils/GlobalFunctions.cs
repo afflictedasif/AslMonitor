@@ -23,7 +23,8 @@ namespace AslMonitor.Utils
         ///</summary>
         //public static string BaseUri = "https://localhost:7110/";
         //public static string BaseUri = "http://localhost:8081/";
-	public static string BaseUri = "http://192.168.1.10:60505/";
+
+        public static string BaseUri = "http://192.168.1.10:60505/";
 
 
         ///<summary>
@@ -36,7 +37,7 @@ namespace AslMonitor.Utils
         public static int SsIntervalInSeconds = 600;
 
         //public static string DatabaseLocation = @"C:\Program Files(x86)\AslSetup\TestDatabase1.db"; 
-        public static string DatabaseLocation = @"D:\AslSetup\TestDatabase1.db"; 
+        public static string DatabaseLocation = @"D:\AslSetup\AslDb.db";
         //"D:\\VS Repos\\AslMonitor\\AslMonitor\\TestDatabase1.db";
 
 
