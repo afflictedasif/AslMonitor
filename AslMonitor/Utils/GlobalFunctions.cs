@@ -22,7 +22,10 @@ namespace AslMonitor.Utils
         ///Base url of the server app.
         ///</summary>
         //public static string BaseUri = "https://localhost:7110/";
-        public static string BaseUri = "http://localhost:8081/";
+        //public static string BaseUri = "http://localhost:8081/";
+	public static string BaseUri = "http://192.168.1.10:60505/";
+
+
         ///<summary>
         ///Screenshots will be saved on this directory.
         ///</summary
@@ -30,9 +33,7 @@ namespace AslMonitor.Utils
         //public static string LocalImagePath = @"C:\Program Files(x86)\AslSetup\Files";
         public static string LocalImagePath = @"D:\AslSetup\Files";
 
-
-
-        public static int SsIntervalInSeconds = 30;
+        public static int SsIntervalInSeconds = 600;
 
         //public static string DatabaseLocation = @"C:\Program Files(x86)\AslSetup\TestDatabase1.db"; 
         public static string DatabaseLocation = @"D:\AslSetup\TestDatabase1.db"; 

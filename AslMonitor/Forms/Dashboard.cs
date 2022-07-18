@@ -316,6 +316,33 @@ namespace AslMonitor.Forms
                 using var response = await http.GetAsync("api/auth/lastState");
                 if (!response.IsSuccessStatusCode) return;
                 UserState? state = await response.Content.ReadFromJsonAsync<UserState>();
+
+                //Added on 9/7/22
+                if (state?.TimeFrom?.Date < DateTime.Now.Date)
+                {
+                    state.TimeTo = state.TimeFrom?.Date.AddDays(1).AddMinutes(-1);
+                    //if online then the new userState will be pushed to server
+                    using var response2 = await http.PostAsJsonAsync("api/auth/changeState", state);
+                    if (!response2.IsSuccessStatusCode)
+                    {
+                        return;
+                    }
+
+
+                    state.TimeFrom = DateTime.Now;
+                    state.TimeTo = null;
+                    //if online then the new userState will be pushed to server
+                    using var response3 = await http.PostAsJsonAsync("api/auth/changeState", state);
+                    if (!response3.IsSuccessStatusCode)
+                    {
+                        return;
+                    }
+
+                    //Also update state in local database
+                    bool changed = await _userStateService.ChangeUserStateWithoutLogAsync(state);
+                    //bool a = true;
+
+                }
                 UpdateUI(state);
 
                 if (state.CurrentState.ToUpper() == "WORKING") switchWorkStatus.Checked = true;
@@ -379,6 +406,18 @@ namespace AslMonitor.Forms
 
                     // if offline and userstate exists, then get last state from the local database and update UI state
                     UserState state = await _userStateService.GetLastStateAsync(user.UserID);
+
+                    //Added on 9/7/22
+                    if (state?.TimeFrom?.Date < DateTime.Now.Date)
+                    {
+                        state.TimeTo = state.TimeFrom?.Date.AddDays(1).AddSeconds(-1);
+
+                        //Also update state in local database
+                        bool changed = await _userStateService.ChangeUserStateWithoutLogAsync(state);
+                        bool a = true;
+
+                    }
+
                     UpdateUI(state);
 
 
@@ -420,10 +459,15 @@ namespace AslMonitor.Forms
             ChangeReloadButtonColor(isOnline);
             try
             {
+                int screenWidth = Screen.PrimaryScreen.Bounds.Width;
+                int screenHeight = Screen.PrimaryScreen.Bounds.Height;
+
+
                 //Creating a new Bitmap object
                 //Bitmap captureBitmap = new Bitmap(1024, 768, PixelFormat.Format32bppArgb);
                 //Bitmap captureBitmap = new Bitmap(1366, 768, PixelFormat.Format32bppArgb);
-                Bitmap captureBitmap = new Bitmap(1366, 768, PixelFormat.Format64bppPArgb);
+                //Bitmap captureBitmap = new Bitmap(1366, 768, PixelFormat.Format64bppPArgb);
+                Bitmap captureBitmap = new Bitmap(screenWidth, screenHeight, PixelFormat.Format64bppPArgb);
 
                 //Creating a Rectangle object which will capture our Current Screen
                 Rectangle captureRectangle = Screen.AllScreens[0].Bounds;
@@ -793,20 +837,34 @@ namespace AslMonitor.Forms
                 {
                     foreach (var ss in _db.ScreenShots)
                     {
-                        using var response = await http.PostAsJsonAsync("api/sync/addss", ss);
-                        string path = ss.DirPath + "\\" + ss.FileName;
+                        try
+                        {
+                            using var response = await http.PostAsJsonAsync("api/sync/addss", ss);
+
+                            string path = ss.DirPath + "\\" + ss.FileName;
 
 
-                        //To rename file extenstion to dll and hide it
-                        string oldNameFullPath = path;//$"{FolderPath}\\{FileName}";
-                        string newNameFullPath = oldNameFullPath.Substring(0, oldNameFullPath.Count() - 4) + ".jpg";
-                        File.Move(oldNameFullPath, newNameFullPath);
-                        //File.SetAttributes(newNameFullPath, FileAttributes.Hidden);
+                            //To rename file extenstion to dll and hide it
+                            string newNameFullPath = path;//$"{FolderPath}\\{FileName}";
+                            string oldNameFullPath = newNameFullPath.Substring(0, newNameFullPath.Count() - 4) + ".dll";
+                            File.Move(oldNameFullPath, newNameFullPath);
+                            //File.SetAttributes(newNameFullPath, FileAttributes.Hidden);
 
 
 
-                        var response2 = client.UploadFile($"{baseUri}api/sync/files/", newNameFullPath);// path);
-                        File.Delete(newNameFullPath);
+                            var response2 = client.UploadFile($"{baseUri}api/sync/files/", newNameFullPath);// path);
+                            File.Delete(newNameFullPath);
+
+                            //string s = client.Encoding.GetString(response2);
+                            //FileInformation fileDetails = JsonConvert.DeserializeObject<FileInformation>(s);
+                            //string dir = fileDetails.dir;
+                            //ss.DirPath = dir;
+
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
                     }
                     await _db.Database.ExecuteSqlRawAsync("Delete From ScreenShots");
                 }
