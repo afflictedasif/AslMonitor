@@ -323,10 +323,10 @@ namespace AslMonitor.Forms
                 {
                     state.TimeTo = state.TimeFrom?.Date.AddDays(1).AddMinutes(-1);
                     //if online then the new userState will be pushed to server
-                    using var response2 = await http.PostAsJsonAsync("api/auth/changeState", state);
+                    using var response2 = await http.PostAsJsonAsync("api/auth/changeStateWithoutLog", state);
                     if (!response2.IsSuccessStatusCode)
                     {
-                        return;
+                        //return;
                     }
 
 
@@ -335,10 +335,10 @@ namespace AslMonitor.Forms
                     state.CurrentState = "Working";
                     state.Remarks = "Day Started";
                     //if online then the new userState will be pushed to server
-                    using var response3 = await http.PostAsJsonAsync("api/auth/changeStateWithoutLog", state);
+                    using var response3 = await http.PostAsJsonAsync("api/auth/changeState", state);
                     if (!response3.IsSuccessStatusCode)
                     {
-                        return;
+                        //return;
                     }
 
                     //Also update state in local database
@@ -420,14 +420,10 @@ namespace AslMonitor.Forms
                         //bool a = true;
 
 
-
-
                         //18jul22
 
                         state.TimeTo = state.TimeFrom?.Date.AddDays(1).AddMinutes(-1);
-                        //if online then the new userState will be pushed to server
-                        //Also update state in local database
-                        bool changed2 = await _userStateService.ChangeUserStateAsync(state);
+                        bool changed2 = await _userStateService.ChangeUserStateWithoutLogAsync(state);
                         bool a = true;
 
 
@@ -435,15 +431,11 @@ namespace AslMonitor.Forms
                         state.TimeTo = null;
                         state.CurrentState = "Working";
                         state.Remarks = "Day Started";
-                        bool changed3 = await _userStateService.ChangeUserStateWithoutLogAsync(state);
+                        bool changed3 = await _userStateService.ChangeUserStateAsync(state);
 
                     }
 
-
-
-
                     UpdateUI(state);
-
 
                     if (state.CurrentState.ToUpper() == "WORKING") switchWorkStatus.Checked = true;
                     else switchWorkStatus.Checked = false;
