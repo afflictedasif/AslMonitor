@@ -71,7 +71,7 @@
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.Password = true;
             this.txtPassword.Size = new System.Drawing.Size(349, 50);
-            this.txtPassword.TabIndex = 4;
+            this.txtPassword.TabIndex = 5;
             this.txtPassword.Text = "";
             this.txtPassword.TrailingIcon = null;
             // 
@@ -108,7 +108,7 @@
             this.txtContact.Multiline = false;
             this.txtContact.Name = "txtContact";
             this.txtContact.Size = new System.Drawing.Size(349, 50);
-            this.txtContact.TabIndex = 2;
+            this.txtContact.TabIndex = 4;
             this.txtContact.Text = "";
             this.txtContact.TrailingIcon = null;
             // 
@@ -126,7 +126,7 @@
             this.txtEmail.Multiline = false;
             this.txtEmail.Name = "txtEmail";
             this.txtEmail.Size = new System.Drawing.Size(349, 50);
-            this.txtEmail.TabIndex = 3;
+            this.txtEmail.TabIndex = 2;
             this.txtEmail.Text = "";
             this.txtEmail.TrailingIcon = null;
             // 
@@ -144,7 +144,7 @@
             this.txtAddress.Multiline = false;
             this.txtAddress.Name = "txtAddress";
             this.txtAddress.Size = new System.Drawing.Size(349, 50);
-            this.txtAddress.TabIndex = 5;
+            this.txtAddress.TabIndex = 3;
             this.txtAddress.Text = "";
             this.txtAddress.TrailingIcon = null;
             // 

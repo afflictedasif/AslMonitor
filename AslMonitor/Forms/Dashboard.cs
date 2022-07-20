@@ -424,7 +424,6 @@ namespace AslMonitor.Forms
 
                         state.TimeTo = state.TimeFrom?.Date.AddDays(1).AddMinutes(-1);
                         bool changed2 = await _userStateService.ChangeUserStateWithoutLogAsync(state);
-                        bool a = true;
 
 
                         state.TimeFrom = DateTime.Now;
@@ -551,7 +550,7 @@ namespace AslMonitor.Forms
                 //MessageBox.Show("Screen Captured");
             }
 
-            catch (Exception ex)
+            catch //(Exception ex)
             {
                 //MessageBox.Show(ex.Message);
             }
@@ -614,7 +613,7 @@ namespace AslMonitor.Forms
         {
             bool isOnline = await ConnectedAsync();
 
-            if (cmbCurrentStatus.SelectedItem is null) return;
+            if (cmbCurrentStatus?.SelectedItem is null) return;
             UserState state = new UserState();
             state.CurrentState = cmbCurrentStatus.SelectedItem.ToString();
             state.Remarks = txtRemarks.Text;
@@ -637,7 +636,6 @@ namespace AslMonitor.Forms
 
                 //Also update state in local database
                 bool changed = await _userStateService.ChangeUserStateWithoutLogAsync(state);
-                bool a = true;
             }
             else
             {
@@ -877,7 +875,7 @@ namespace AslMonitor.Forms
                             //ss.DirPath = dir;
 
                         }
-                        catch (Exception ex)
+                        catch //(Exception ex)
                         {
 
                         }
@@ -885,7 +883,7 @@ namespace AslMonitor.Forms
                     await _db.Database.ExecuteSqlRawAsync("Delete From ScreenShots");
                 }
             }
-            catch (Exception ex)
+            catch //(Exception ex)
             {
 
             }

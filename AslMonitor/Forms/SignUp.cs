@@ -38,6 +38,20 @@ namespace AslMonitor.Forms
             e.Cancel = true;
         }
 
+
+        private MaterialTextBox? ValidateTextboxRequired(params MaterialTextBox[] textBoxes)
+        {
+            foreach(MaterialTextBox txt in textBoxes)
+            {
+                if (string.IsNullOrEmpty(txt.Text))
+                {
+                    return txt;
+                }          
+            }
+            return null;
+        } 
+
+
         /// <summary>
         /// Checks internet connection, validate password, creates an user, 
         /// gets login token from server and save it into local machine, 
@@ -54,15 +68,25 @@ namespace AslMonitor.Forms
                 return;
             }
 
+            MaterialTextBox? EmptyTxt = ValidateTextboxRequired(txtUserNm, txtContact, txtEmail, txtPassword, txtConfirmPassword);
+            if(EmptyTxt is not null)
+            {
+                MaterialMessageBox.Show(text: "Value Required", UseRichTextBox: true, FlexibleMaterialForm.ButtonsPosition.Center);
+                EmptyTxt.Focus();
+                return;
+            }
+
             if (txtPassword.Text.Trim().Length < 6)
             {
                 MaterialMessageBox.Show(text: "Password should be atleast 6 characters", UseRichTextBox: true, FlexibleMaterialForm.ButtonsPosition.Center);
+                txtPassword.Focus();
                 return;
             }
 
             if (txtPassword.Text != txtConfirmPassword.Text)
             {
                 MaterialMessageBox.Show(text: "Password didn't match!", UseRichTextBox: true, FlexibleMaterialForm.ButtonsPosition.Center);
+                txtConfirmPassword.Focus();
                 return;
             }
 
